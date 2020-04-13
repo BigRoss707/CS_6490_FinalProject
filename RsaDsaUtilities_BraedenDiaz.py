@@ -94,8 +94,8 @@ def generateRSAKeyPair():
     while not isPrime(q, 150):
         q = randomIntFromBytes(128)
 
-    print(p)
-    print(q)
+##    print(p)
+##    print(q)
 
     N = p * q
     phi = (p - 1) * (q - 1)
@@ -111,8 +111,9 @@ def generateRSAKeyPair():
 
     return ((e, N), (d, N))
 
-def encryptWithRSA(publicKey, num):
-
+def encryptWithRSA(publicKey, messageBytes):
+    num = int.from_bytes(messageBytes, "big")
+    
     e = publicKey[0]
     N = publicKey[1]
     
@@ -121,7 +122,8 @@ def encryptWithRSA(publicKey, num):
 
     return modexp(num, e, N)
 
-def decryptWithRSA(privateKey, encryptedNum):
+def decryptWithRSA(privateKey, encryptedMessageBytes):
+    encryptedNum = int.from_bytes(encryptedMessageBytes, "big")
 
     d = privateKey[0]
     N = privateKey[1]
@@ -140,16 +142,21 @@ def int2bytes(n, byteorder):
 if __name__ == "__main__":
     message = input("Enter Input: ")
     messageBytes = message.encode()
-    messageBytesAsInt = int.from_bytes(messageBytes, "big")
+
+    print()
+
+    print("Generating key-pair, please wait...\n")
 
     publicKey, privateKey = generateRSAKeyPair()
 
-    print("\n")
+    print("Encrypting...\n")
 
-    encryptedMessage = encryptWithRSA(publicKey, messageBytesAsInt)
-    print("Encrypted Message (as int): " + str(encryptedMessage)  + "\n")
+    encryptedMessage = encryptWithRSA(publicKey, messageBytes)
+    encryptedMessageBytes = int2bytes(encryptedMessage, "big")
+    print("Encrypted Message (as bytes):\n" + str(encryptedMessageBytes)  + "\n")
+    print("Encrypted Message (as hex):\n" + str(encryptedMessageBytes.hex()) + "\n")
 
-    decryptedMessageInt = decryptWithRSA(privateKey, encryptedMessage)
+    decryptedMessageInt = decryptWithRSA(privateKey, encryptedMessageBytes)
     decryptedMessageBytes = int2bytes(decryptedMessageInt, "big")
     decryptedMessage = decryptedMessageBytes.decode("utf-8")
     print("Decrypted Message: " + decryptedMessage + "\n")
