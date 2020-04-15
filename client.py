@@ -1,8 +1,8 @@
 import socket
 import sys
-import keys
 import os
 import AesUtilities
+from keys import keys
 
 def sendMessage(sock, message):
 	#Send the message over the socket
@@ -15,16 +15,17 @@ def receiveMessage(sock):
 	#print("message: " + message.decode())
 	splitMessage = message.decode().split(",")
 	while len(splitMessage[1]) < int(splitMessage[0]):
-		splitMessage[1] += sock.recv(1024)
+		splitMessage[1] += sock.recv(1024).decode()
 	return splitMessage[1]
 
 #TODO Need to encrypt and integrity protect
 def fileTransfer(sock, k):	
 	encryptedFileName = receiveMessage(sock)
-	fileName = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
+	fileName = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, encryptedFileName)
 	print('decrypted file name: ' + fileName)
 
-	fileContents = receiveMessage(sock)
+	encryptedFileContents = receiveMessage(sock)
+	fileContents = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, encryptedFileContents)
 	fileName = "Client_" + fileName #Do this so that the client creates a separate version of the file than the server
 
 	if os.path.exists(fileName):

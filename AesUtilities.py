@@ -1,8 +1,7 @@
 import base64
 import hashlib
 import hmac
-import keys
-#import Crypto.Cipher
+from keys import keys
 from Crypto.Cipher import AES
 from Crypto import Random
 
@@ -10,7 +9,7 @@ BlockSize = 16
 
 def pad(message):
 	#Pad the string with the character(0-15) corresponding to the amount of space remaining in the block
-	message = message + (BlockSize - len(message) % BlockSize) * chr(BlockSize - len(message))
+	message = message + (BlockSize - len(message) % BlockSize) * chr(BlockSize - len(message) % BlockSize)
 	return message
 
 def unpad(message):
@@ -41,14 +40,14 @@ def encryptAes256(key, message):
 	message = pad(message)
 	iv = Random.new().read(AES.block_size)
 	cipher = AES.new(key, AES.MODE_CBC, iv)
-	return base64.b64encode(iv + cipher.encrypt(message))
+	return base64.b64encode(iv + cipher.encrypt(message.encode())).decode()
 
 def decryptAes256(key, message):
-	message = base64.b64decode(message)
+	message = base64.b64decode(message.encode())
 	iv = message[:16]
 	cipher = AES.new(key, AES.MODE_CBC, iv)
 	decryptedMessage = cipher.decrypt(message[16:])
-	return unpad(decryptedMessage)
+	return unpad(decryptedMessage).decode()
 
 #message should be encoded
 def getDigest(key, message):
@@ -59,9 +58,9 @@ def getTestKeys():
 	#We use the same password to generate keys so the client/server share keys for the test case	
 	testPassword = 'password'
 	key1 = hashlib.sha256((testPassword + '1').encode()).digest()
-	key1 = hashlib.sha256((testPassword + '2').encode()).digest()	
-	key1 = hashlib.sha256((testPassword + '3').encode()).digest()	
-	key1 = hashlib.sha256((testPassword + '4').encode()).digest()		
+	key2 = hashlib.sha256((testPassword + '2').encode()).digest()	
+	key3 = hashlib.sha256((testPassword + '3').encode()).digest()	
+	key4 = hashlib.sha256((testPassword + '4').encode()).digest()		
 	keyStore = keys(key1, key2, key3, key4)
 	return keyStore
 	 	

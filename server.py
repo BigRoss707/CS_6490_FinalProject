@@ -1,8 +1,8 @@
 import socket
 import sys
-import keys
 import os
 import AesUtilities
+from keys import keys
 
 def sendMessage(sock, message):
 	#Send the message over the socket
@@ -15,7 +15,7 @@ def receiveMessage(sock):
 	#print("message: " + message.decode())
 	splitMessage = message.decode().split(",")
 	while len(splitMessage[1]) < int(splitMessage[0]):
-		splitMessage[1] += sock.recv(1024)
+		splitMessage[1] += sock.recv(1024).decode()
 	return splitMessage[1]
 
 def createFile(fileName, numberCharacters):
@@ -35,10 +35,11 @@ def fileTransfer(sock, k):
 	
 	encryptedFileName = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
 	sendMessage(sock, encryptedFileName)
-
+	
 	fileStream = open(fileName, "r")	
-	contents = fileStream.read()
-	sendMessage(sock, contents)
+	fileContents = fileStream.read()
+	encryptedFileContents = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption,k.serverAuthentication, fileContents)
+	sendMessage(sock,encryptedFileContents)
 
 #Returns a keys object with keys filled out or throws an exception
 def handshake(sock):
@@ -63,8 +64,8 @@ def main():
 
 			#File Transfer
 			fileTransfer(clientSocket, k)
-		except:
-			print("Connection to client ended unexpectedly.")
+		#except:
+		#	print("Connection to client ended unexpectedly.")
 		finally:
 			clientSocket.close()
 
