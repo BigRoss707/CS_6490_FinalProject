@@ -120,7 +120,7 @@ def encryptWithRSA(publicKey, messageBytes):
     if not (num < N):
         raise Exception("[Error] The number " + str(num) + " must be less than the modulus N.")
 
-    return modexp(num, e, N)
+    return int2bytes(modexp(num, e, N), "big")
 
 def decryptWithRSA(privateKey, encryptedMessageBytes):
     encryptedNum = int.from_bytes(encryptedMessageBytes, "big")
@@ -131,7 +131,7 @@ def decryptWithRSA(privateKey, encryptedMessageBytes):
     if not (encryptedNum < N):
         raise Exception("[Error] The encrypted number " + str(encryptedNum) + " is not less than the modulus N.")
 
-    return modexp(encryptedNum, d, N)
+    return int2bytes(modexp(encryptedNum, d, N), "big")
 
 def int2bytes(n, byteorder):
     
@@ -151,13 +151,11 @@ if __name__ == "__main__":
 
     print("Encrypting...\n")
 
-    encryptedMessage = encryptWithRSA(publicKey, messageBytes)
-    encryptedMessageBytes = int2bytes(encryptedMessage, "big")
+    encryptedMessageBytes = encryptWithRSA(publicKey, messageBytes)
     print("Encrypted Message (as bytes):\n" + str(encryptedMessageBytes)  + "\n")
     print("Encrypted Message (as hex):\n" + str(encryptedMessageBytes.hex()) + "\n")
 
-    decryptedMessageInt = decryptWithRSA(privateKey, encryptedMessageBytes)
-    decryptedMessageBytes = int2bytes(decryptedMessageInt, "big")
+    decryptedMessageBytes = decryptWithRSA(privateKey, encryptedMessageBytes)
     decryptedMessage = decryptedMessageBytes.decode("utf-8")
     print("Decrypted Message: " + decryptedMessage + "\n")
 
