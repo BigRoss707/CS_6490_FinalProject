@@ -1,5 +1,5 @@
 from random import *
-import random
+import random, math
 from hashlib import sha1
 
 
@@ -23,7 +23,7 @@ def rabinMiller(num,numberOfTrials):
                     v = (v**2)%num
     return True
 
-def isPrime(num):
+def isPrime2(num):
     if (num<2) or (num%2 == 0):
         return False
     else:
@@ -35,12 +35,12 @@ def generatePrimes():
     L = 512 # Number of bits for p
 
     q = getrandbits(N) # Generate random number with N-bits
-    while not(isPrime(q)): # Check of the number is prime
+    while not(isPrime2(q)): # Check of the number is prime
         q = getrandbits(N)
     
     i = 2**L
     p = 0
-    while not(isPrime(p)): # q should be a factor of (p-1)
+    while not(isPrime2(p)): # q should be a factor of (p-1)
         i += 1 # (p-1)/q
         p = q*i + 1
 
@@ -57,8 +57,14 @@ def invert(n,p):
     inverse = pow(n,toitent-1, p)
     return inverse
 
+def int2bytes(n, byteorder):
+    
+    bytes_required = max(1, math.ceil(n.bit_length() / 8))
+
+    return n.to_bytes(bytes_required, byteorder)
+
 def hash(m):
-    m = bin(m)
+    #m = bin(m) # Not needed as we now pass in bytes
     m = sha1(m).hexdigest()
     m = int(m,16)
     return m
@@ -82,9 +88,10 @@ def verification(p, q, g, publicKey, r, s, message):
 if __name__ == "__main__":
     p, q, g = generatePrimes()
     privateKey, publicKey = generateKeys(p, q, g)
-    message = int(input("Enter a nuber: "))
-    r, s = signing(p, q, g, privateKey, message)
-    verification(p, q, g, publicKey, r, s, message)
+    message = input("Enter input: ")
+    messageBytes = message.encode()
+    r, s = signing(p, q, g, privateKey, messageBytes)
+    verification(p, q, g, publicKey, r, s, messageBytes)
 
 
 
