@@ -19,11 +19,9 @@ def receiveMessage(sock):
 	return splitMessage[1]
 
 #TODO Need to encrypt and integrity protect
-def fileTransfer(sock):
-	testKeys = AesUtilities.getTestKeys()
-	
+def fileTransfer(sock, k):	
 	encryptedFileName = receiveMessage(sock)
-	fileName = AesUtilities.decryptAndIntegretyProtect(testKeys.serverEncryption, testKeys.serverAuthentication, fileName)
+	fileName = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
 	print('decrypted file name: ' + fileName)
 
 	fileContents = receiveMessage(sock)
@@ -35,6 +33,11 @@ def fileTransfer(sock):
 	fileStream = open(fileName, "w")
 	fileStream.write(fileContents)
 
+#Returns a keys object with keys filled out or throws an exception
+def handshake(sock):
+	#TODO complete the function
+	return AesUtilities.getTestKeys()
+
 def main():
 	print("Client Main")
 	serverIp = 'localhost'
@@ -45,14 +48,12 @@ def main():
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	serverAddress = (serverIp, 34570)
 	serverSocket.connect(serverAddress)
-
-	#Hello World Client
-	#message1 = receiveMessage(serverSocket)
-	#print(message1)
-	#sendMessage(serverSocket, 'hello world!')
 	
+	#Handshake Phase
+	k = handshake(serverSocket)	
+
 	#File Transfer
-	fileTransfer(serverSocket)
+	fileTransfer(serverSocket, k)
 
 if __name__ == "__main__":
 	main()

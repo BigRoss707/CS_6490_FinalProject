@@ -29,18 +29,21 @@ def createFile(fileName, numberCharacters):
 	fileStream.close()	
 
 #TODO Need to encrypt and integrity protect
-def fileTransfer(sock):
-	testKeys = AesUtilities.getTestKeys()
-	
+def fileTransfer(sock, k):	
 	fileName = "TestFile.txt"
 	createFile(fileName, 10000) #this should be about 2KB
 	
-	encryptedFileName = AesUtilities.encryptAndIntegretyProtect(testKeys.serverEncryption, testKeys.serverAuthentication, fileName)
+	encryptedFileName = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
 	sendMessage(sock, encryptedFileName)
 
 	fileStream = open(fileName, "r")	
 	contents = fileStream.read()
 	sendMessage(sock, contents)
+
+#Returns a keys object with keys filled out or throws an exception
+def handshake(sock):
+	#TODO complete the function
+	return AesUtilities.getTestKeys()
 
 def main():
 	print("Server Main")
@@ -55,13 +58,11 @@ def main():
 		clientSocket, clientAddress = serverSocket.accept()
 		
 		try:
-			#Hello World Server
-			#sendMessage(clientSocket, 'hello world!')
-			#message1 = receiveMessage(clientSocket)
-			#print(message1)
+			#Handshake Phase
+			k = handshake(serverSocket)	
 
 			#File Transfer
-			fileTransfer(clientSocket)
+			fileTransfer(clientSocket, k)
 		except:
 			print("Connection to client ended unexpectedly.")
 		finally:
