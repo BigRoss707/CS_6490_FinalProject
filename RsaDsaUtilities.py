@@ -72,8 +72,11 @@ def testRsaDsa():
 
     print()
 
+    print("Verifying signature and decrypting...\n")
+    
     decryptedMessageBytes = decryptAndVerify(privateKeyDecrypt, publicKeyVerify, signature, p, q, g, encryptedMessageBytes)
     decryptedMessage = decryptedMessageBytes.decode("utf-8")
+    print("Verification successful!\n")
     print("Decrypted Message: " + decryptedMessage + "\n")
     
 if __name__ == "__main__":
