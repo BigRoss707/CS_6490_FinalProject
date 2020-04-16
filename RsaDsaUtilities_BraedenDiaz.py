@@ -85,14 +85,17 @@ def isPrime(N, numberOfTrials):
 def randomIntFromBytes(numOfBytes):
     return int.from_bytes(os.urandom(numOfBytes), "big")
     
-def generateRSAKeyPair():
-    p = -1
-    while not isPrime(p, 150):
-        p = randomIntFromBytes(128)
+def generateRSAKeyPair(p=None, q=None):
 
-    q = -1
-    while not isPrime(q, 150):
-        q = randomIntFromBytes(128)
+    if not p:
+        p = -1
+        while not isPrime(p, 150):
+            p = randomIntFromBytes(128)
+
+    if not q:
+        q = -1
+        while not isPrime(q, 150):
+            q = randomIntFromBytes(128)
 
 ##    print(p)
 ##    print(q)
@@ -139,7 +142,8 @@ def int2bytes(n, byteorder):
 
     return n.to_bytes(bytes_required, byteorder)
 
-if __name__ == "__main__":
+# A function used for testing RSA encryption and decryption
+def testRSA():
     message = input("Enter Input: ")
     messageBytes = message.encode()
 
@@ -158,6 +162,9 @@ if __name__ == "__main__":
     decryptedMessageBytes = decryptWithRSA(privateKey, encryptedMessageBytes)
     decryptedMessage = decryptedMessageBytes.decode("utf-8")
     print("Decrypted Message: " + decryptedMessage + "\n")
+    
+if __name__ == "__main__":
+    testRSA()
 
     
     

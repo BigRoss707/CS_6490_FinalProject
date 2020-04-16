@@ -75,23 +75,36 @@ def signing(p, q, g, privateKey, message):
     s = (invert(k,q)* (hash(message) + privateKey*r))%q
     return (r, s)
 
-def verification(p, q, g, publicKey, r, s, message):
+def verification(p, q, g, publicKey, signature, message):
+    r = signature[0]
+    s = signature[1]
+    
     w = invert(s,q)
     u1 = hash(message)*w % q
     u2 = r*w % q
     v = (pow(g, u1, p)*pow(publicKey, u2, p)%p)%q
     if (v == r):
-        print('Message signature matched')
+        return True
     else:
-        print('Message signature did not match')
+        return False
+        
 
-if __name__ == "__main__":
+# A function used for testing DSA signing and verification
+def testDSA():
     p, q, g = generatePrimes()
     privateKey, publicKey = generateKeys(p, q, g)
     message = input("Enter input: ")
     messageBytes = message.encode()
-    r, s = signing(p, q, g, privateKey, messageBytes)
-    verification(p, q, g, publicKey, r, s, messageBytes)
+    signature = signing(p, q, g, privateKey, messageBytes)
+    verified = verification(p, q, g, publicKey, signature, messageBytes)
+
+    if verified:
+        print('Message signature matched')
+    else:
+       print('Message signature did not match')
+       
+if __name__ == "__main__":
+    testDSA()
 
 
 
