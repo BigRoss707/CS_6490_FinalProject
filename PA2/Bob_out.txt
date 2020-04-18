@@ -1,0 +1,7 @@
+[Bob]: Listening on localhost: 10000
+[Bob]: Received client hello msg
+[Bob]: Certificate received from Alice is OK
+[Bob]: Generated R_bob = 9409a043ac044993b9ff3aae879102b2
+[Bob]: Sent server hello message.
+[Bob]: Received R_alice = dc17f2431a7e4d4e92878b247748215c
+[Bob]: Received hash matched

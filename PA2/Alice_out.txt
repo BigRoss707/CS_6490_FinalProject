@@ -1,0 +1,7 @@
+[Alice]: Connecting to bob on localhost: 10000
+[Alice]: Sent client hello msg to Bob(server)
+[Alice]: Certificate received from Bob is verfied
+[Alice]: Received R_bob = 9409a043ac044993b9ff3aae879102b2
+[Alice]: Generated R_alice = dc17f2431a7e4d4e92878b247748215c
+[Alice]: Sent keyed hash of handshake messages
+[Alice]: Received hash did not match. Aborting connection...
