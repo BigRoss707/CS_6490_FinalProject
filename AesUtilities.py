@@ -5,7 +5,13 @@ from keys import keys
 from Crypto.Cipher import AES
 from Crypto import Random
 
+import time, struct
+
 BlockSize = 16
+
+# Returns 32 bytes of randomness with the first four bytes being the Unix time (epoch, since 1970)
+def generateNonce():
+        return struct.pack("f", time.time()) + Random.get_random_bytes(28)
 
 def pad(message):
 	#Pad the string with the character(0-15) corresponding to the amount of space remaining in the block
@@ -63,5 +69,7 @@ def getTestKeys():
 	key4 = hashlib.sha256((testPassword + '4').encode()).digest()		
 	keyStore = keys(key1, key2, key3, key4)
 	return keyStore
-	 	
+
+if __name__ == "__main__":
+        print(generateNonce().hex())
 
