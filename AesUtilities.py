@@ -13,6 +13,14 @@ BlockSize = 16
 def generateNonce():
         return struct.pack("f", time.time()) + Random.get_random_bytes(28)
 
+# Takes two byte strings and xors each bit together
+def xorBytes(bytesA, bytesB):
+        return bytes([a ^ b for a, b in zip(bytesA, bytesB)])
+
+# Generates a master key by xoring the two provided nonces together
+def generateMasterKey(Ra, Rb):
+        return xorBytes(Ra, Rb)
+
 def pad(message):
 	#Pad the string with the character(0-15) corresponding to the amount of space remaining in the block
 	message = message + (BlockSize - len(message) % BlockSize) * chr(BlockSize - len(message) % BlockSize)
