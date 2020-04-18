@@ -1,4 +1,5 @@
 import sys, os, socket, uuid, hashlib, hmac, time, subprocess
+import time
 from Crypto.Cipher import AES, DES
 from M2Crypto import RSA, X509, EVP, BIO
 
@@ -25,6 +26,9 @@ server_address = ('localhost', server_socket)
 print('Connecting to Bob..')
 f.write('[Alice]: Connecting to bob on %s: %s\n' % server_address)
 sock.connect(server_address)
+
+#Start timing after the connection is made
+startTime = time.perf_counter()
 
 #send client hello message to server
 client_hello = 'I want to talk' + encryption_method + certificate
@@ -104,6 +108,9 @@ elif encryption_method == 'ECB':
 intr_key_alice = master_secret + 'alice'
 intr_key_bob= master_secret + 'bob'
 
+#Get the time after the handshake and key establishment is completed
+afterHandshake = time.perf_counter()
+
 #send data
 data = open('file.txt').read()
 header = 'data' + '1' + hex(len(data))[2:]
@@ -115,4 +122,11 @@ enc_record = enc_key_alice.encrypt(data + hmac_record + pad)
 f.write('[Alice]: Sent file.\n')
 sock.sendall(header+enc_record)
 
+#Time after file transfer is complete
+afterFileTransfer = time.perf_counter()
+
+print('Time elapsed during handshake: ' + str(afterHandshake - startTime))
+print('Time elapsed during fileTransfer: ' + str(afterFileTransfer - afterHandshake))
+print('Total time elapsed: ' + str(afterFileTransfer - startTime))
+                        
 f.close()
