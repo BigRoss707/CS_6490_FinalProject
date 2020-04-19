@@ -4,14 +4,19 @@ import hmac
 from keys import keys
 from Crypto.Cipher import AES
 from Crypto import Random
+from Crypto.Hash import MD5, SHA1
 
 import time, struct
 
 BlockSize = 16
 
-# Returns 32 bytes of randomness with the first four bytes being the Unix time (epoch, since 1970)
+# ****** Key Functions Added by Braeden ****** #
+
+# Returns 32 bytes (256-bits) of randomness with the first four bytes being the Unix time (epoch, since 1970)
 def generateNonce():
-        return struct.pack("f", time.time()) + Random.get_random_bytes(28)
+        # Pack the time into a double (8-bytes) but only use the first 4-bytes as
+        # those are the ones that are changing with time.
+        return struct.pack("d", time.time())[0:4] + Random.get_random_bytes(28)
 
 # Takes two byte strings and xors each bit together
 def xorBytes(bytesA, bytesB):
@@ -20,6 +25,49 @@ def xorBytes(bytesA, bytesB):
 # Generates a master key by xoring the two provided nonces together
 def generateMasterKey(Ra, Rb):
         return xorBytes(Ra, Rb)
+
+"""
+    Implementation of SSLv3 PRF function as described in RFC-6101:
+    https://tools.ietf.org/html/rfc6101#page-37
+    
+     SSLv3-PRF(secret, seed) =
+        MD5(secret || SHA-1("A" || secret || seed)) ||
+        MD5(secret || SHA-1("BB" || secret || seed)) ||
+        MD5(secret || SHA-1("CCC" || secret || seed)) || ...
+        
+    The requestedLength should not be more than  26 x hashLength (16 in this case) = 416.
+"""
+def SSLv3PRF(masterKey, RaSeed, RbSeed, requestedLength):
+    alphaBytes = [b"A", b"B", b"C", b"D", b"E", b"F", b"G", b"H", b"I", b"J", b"K", b"L",
+         b"M", b"N", b"O", b"P", b"Q", b"R", b"S", b"T", b"U", b"V", b"W", b"X",
+         b"Y", b"Z"]
+
+    finalResult = b""
+    
+    hashLength = 16
+
+    rounds = requestedLength + (hashLength - 1)
+
+    for i in range(rounds):
+        letters = alphaBytes[i % 26] * (i + 1)
+        sha1Digest = SHA1.new(letters + masterKey + RaSeed + RbSeed).digest()
+        finalResult += MD5.new(masterKey + sha1Digest).digest()
+
+    return finalResult[:requestedLength]
+
+def generateSSLKeys(masterKey, Ra, Rb):
+        # Represents a 64-byte sized block from which the keys will come from
+        keyBlock = SSLv3PRF(masterKey, Ra, Rb, 64)
+
+        # Chop up the block into a 32-byte (256-bit) encryption key and authentication key
+        encryptKey = keyBlock[0:32]
+        authKey = keyBlock[32:64]
+
+        return (encryptKey, authKey)
+
+# ****** End of Key Functions ****** #
+
+# ****** AES Functions Added by Jacob ****** #
 
 def pad(message):
 	#Pad the string with the character(0-15) corresponding to the amount of space remaining in the block
@@ -79,5 +127,32 @@ def getTestKeys():
 	return keyStore
 
 if __name__ == "__main__":
-        print(generateNonce().hex())
+        # Generate two nonces Ra representing Alice and Rb representing Bob
+        Ra = generateNonce()
+        # Represents time between creating nonces
+        time.sleep(1)
+        Rb = generateNonce()
+
+        print("Nonce Ra: ", Ra.hex())
+        print("Length: " + str(int(len(Ra.hex()) / 2)) + " bytes\n")
+        
+        print("Nonce Rb: ", Ra.hex())
+        print("Length: " + str(int(len(Rb.hex()) / 2)) + " bytes\n")
+
+        # Generate the master key from two nonces
+        masterKey = generateMasterKey(Ra, Rb)
+
+        print("Master Key: ", masterKey.hex())
+        print("Length: " + str(int(len(masterKey.hex()) / 2)) + " bytes\n")
+
+        # Generate the encryption and authentication key from the master key and nonces
+        # Note: You will call this once from the client and once from the server.
+        encryptKey, authKey = generateSSLKeys(masterKey, Ra, Rb)
+
+        print("Encryption Key: ", encryptKey.hex())
+        print("Length: " + str(int(len(encryptKey.hex()) / 2)) + " bytes\n")
+        print("Authentication Key: ", authKey.hex())
+        print("Length: " + str(int(len(authKey.hex()) / 2)) + " bytes\n")
+        
+        
 
