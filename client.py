@@ -20,16 +20,15 @@ def receiveMessage(sock):
                 splitMessage[1] += sock.recv(1024).decode()
         return splitMessage[1]
 
-#TODO Need to encrypt and integrity protect
-def fileTransfer(sock, ClientencryptKey, ClientauthKey):      
+def fileTransfer(sock, ServerEncryptKey, ServerAuthKey):      
         encryptedFileName = receiveMessage(sock)
         # fileName = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, encryptedFileName)
-        fileName = AesUtilities.decryptAndIntegretyProtect(ClientencryptKey, ClientauthKey, encryptedFileName)
+        fileName = AesUtilities.decryptAndIntegretyProtect(ServerEncryptKey, ServerAuthKey, encryptedFileName)
         print('decrypted file name: ' + fileName)
 
         encryptedFileContents = receiveMessage(sock)
         # fileContents = AesUtilities.decryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, encryptedFileContents)
-        fileContents = AesUtilities.decryptAndIntegretyProtect(ClientencryptKey, ClientauthKey, encryptedFileContents)
+        fileContents = AesUtilities.decryptAndIntegretyProtect(ServerEncryptKey, ServerAuthKey, encryptedFileContents)
         fileName = "Client_" + fileName #Do this so that the client creates a separate version of the file than the server
 
         if os.path.exists(fileName):
@@ -55,10 +54,10 @@ def handshake(sock):
         MasterKey = AesUtilities.generateMasterKey(Ra,Rb)
 
         # Generate Encryption and Authentication keys
-        ClientencryptKey, ClientauthKey = AesUtilities.generateSSLKeys(MasterKey,Ra,Rb)
+        ServerEncryptKey, ServerAuthKey = AesUtilities.generateSSLKeys(MasterKey,Ra,Rb)
 
-        # return AesUtilities.getTestKeys()
-        return ClientencryptKey, ClientauthKey
+        # return the server authentication and ecryption keys used to receive messages from the server
+        return ServerEncryptKey, ServerAuthKey
 
 def main():
         print("Client Main")
@@ -74,12 +73,13 @@ def main():
         startTime = time.perf_counter()
         
         #Handshake Phase
-        ClientencryptKey, ClientauthKey = handshake(serverSocket)
+        #We only generate and user Server auth/enc keys because the messages are only one way in this example
+        ServerEncryptKey, ServerAuthKey = handshake(serverSocket)
 
         afterHandshake = time.perf_counter()
         
         #File Transfer
-        fileTransfer(serverSocket, ClientencryptKey, ClientauthKey)
+        fileTransfer(serverSocket, ServerEncryptKey, ServerAuthKey)
 
         afterFileTransfer = time.perf_counter()
 
