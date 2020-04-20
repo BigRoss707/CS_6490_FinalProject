@@ -30,7 +30,6 @@ def createFile(fileName, numberCharacters):
         
         fileStream.close()      
 
-#TODO Need to encrypt and integrity protect
 def fileTransfer(sock, ServerencryptKey, ServerauthKey):    
         fileName = "TestFile.txt"
         createFile(fileName, 10000) #this should be about 2KB
