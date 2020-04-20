@@ -3,6 +3,7 @@ import sys
 import os
 import AesUtilities
 import time
+import subprocess
 from keys import keys
 
 def sendMessage(sock, message):
@@ -30,22 +31,42 @@ def createFile(fileName, numberCharacters):
         fileStream.close()      
 
 #TODO Need to encrypt and integrity protect
-def fileTransfer(sock, k):      
+def fileTransfer(sock, ServerencryptKey, ServerauthKey):    
         fileName = "TestFile.txt"
         createFile(fileName, 10000) #this should be about 2KB
         
-        encryptedFileName = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
+        # encryptedFileName = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption, k.serverAuthentication, fileName)
+        encryptedFileName = AesUtilities.encryptAndIntegretyProtect(ServerencryptKey, ServerauthKey, fileName)
         sendMessage(sock, encryptedFileName)
         
         fileStream = open(fileName, "r")        
         fileContents = fileStream.read()
-        encryptedFileContents = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption,k.serverAuthentication, fileContents)
+        # encryptedFileContents = AesUtilities.encryptAndIntegretyProtect(k.serverEncryption,k.serverAuthentication, fileContents)
+        encryptedFileContents = AesUtilities.encryptAndIntegretyProtect(ServerencryptKey, ServerauthKey, fileContents)
+
         sendMessage(sock,encryptedFileContents)
 
 #Returns a keys object with keys filled out or throws an exception
 def handshake(sock):
-        #TODO complete the function
-        return AesUtilities.getTestKeys()
+
+        # Receive client hello message
+        clientHello = sock.recv(100)
+
+        # Get client's Ra
+        Ra = clientHello[5:]
+
+        # Generate and reply with Rb to client
+        Rb = AesUtilities.generateNonce()
+        sock.sendall(Rb)
+
+        # Compute Master key
+        MasterKey = AesUtilities.generateMasterKey(Ra,Rb)
+
+        # Generate Encryption and Authentication keys
+        ServerencryptKey, ServerauthKey = AesUtilities.generateSSLKeys(MasterKey,Ra,Rb)
+
+        # return AesUtilities.getTestKeys()
+        return ServerencryptKey, ServerauthKey
 
 def main():
         print("Server Main")
@@ -63,12 +84,13 @@ def main():
                         startTime = time.perf_counter()
                         
                         #Handshake Phase
-                        k = handshake(serverSocket)
+                        ## k = handshake(serverSocket)
+                        ServerencryptKey, ServerauthKey = handshake(clientSocket)
  
                         afterHandshake = time.perf_counter()
                         
                         #File Transfer
-                        fileTransfer(clientSocket, k)
+                        fileTransfer(clientSocket, ServerencryptKey, ServerauthKey)
 
                         afterFileTransfer = time.perf_counter()
                         
