@@ -5,6 +5,8 @@ import AesUtilities
 import time
 from keys import keys
 import RsaDsaUtilities
+import RsaDsaUtilities_Syed
+
 
 def sendMessage(sock, message):
         #Send the message over the socket
@@ -40,21 +42,42 @@ def fileTransfer(sock, ServerEncryptKey, ServerAuthKey):
 #Returns a keys object with keys filled out or throws an exception
 def handshake(sock):
         
+        # Generate client's RSA/DSA key pair (Key one is DSA, key Two is RSA)
+        privateKeyOne, publicKeyOne, publicKeyTwo, privateKeyTwo, p, q, g = RsaDsaUtilities.generateRsaDsaKeyPairs()
+
         # Generate Ra
         Ra = AesUtilities.generateNonce()
 
-        # Send Hello with Ra to server
-        clientHello = 'Hello'.encode() + Ra
+        # Send Hello, RSA public key, DSA public key
+        clientHello = 'Hello'.encode() + RsaDsaUtilities_Syed.int2bytes(publicKeyTwo[0], 'big') + RsaDsaUtilities_Syed.int2bytes(publicKeyTwo[1], 'big') + RsaDsaUtilities_Syed.int2bytes(publicKeyOne, 'big')
         sock.sendall(clientHello)
 
-        # Receive Rb from server
-        Rb = sock.recv(100)
+        # Receive Encrypted Rb, RSA-public, DSA-public [p,q,g] from server
+        ReplyFromServer = sock.recv(600)
+        encryptedRb = ReplyFromServer[0:104]
+        ServerEncryptedSignature = (int.from_bytes(ReplyFromServer[104:124],'big'),int.from_bytes(ReplyFromServer[124:144],'big'))
+        ServerRsaPublic = (int.from_bytes(ReplyFromServer[144:145],'big'),int.from_bytes(ReplyFromServer[145:249],'big'))
+        ServerDsaPublic = int.from_bytes(ReplyFromServer[249:333],'big')
+        Server_p = int.from_bytes(ReplyFromServer[333:417],'big')
+        Server_q = int.from_bytes(ReplyFromServer[417:437],'big')
+        Server_g = int.from_bytes(ReplyFromServer[437:521],'big')
+
+        # Decrypt Rb and extract server's RSA-public, DSA-public
+        Rb = RsaDsaUtilities.decryptAndVerify(privateKeyTwo,ServerDsaPublic,ServerEncryptedSignature, Server_p, Server_q, Server_g, encryptedRb)
 
         # Compute Master key
         MasterKey = AesUtilities.generateMasterKey(Ra,Rb)
 
+        # Encrypt Ra with server's RSA-public and sign with client's DSA-private
+        encryptedMessageBytes, signatureOfEncryptedMessage = RsaDsaUtilities.encryptAndSign(ServerRsaPublic, privateKeyOne, p, q, g, Ra)
+
+        # Send Ra to server
+        ClientReply = encryptedMessageBytes + RsaDsaUtilities_Syed.int2bytes(signatureOfEncryptedMessage[0], 'big') + RsaDsaUtilities_Syed.int2bytes(signatureOfEncryptedMessage[1], 'big') + RsaDsaUtilities_Syed.int2bytes(p,'big') + RsaDsaUtilities_Syed.int2bytes(q,'big') + RsaDsaUtilities_Syed.int2bytes(g,'big')
+        sock.sendall(ClientReply)
+       
         # Generate Encryption and Authentication keys
         ServerEncryptKey, ServerAuthKey = AesUtilities.generateSSLKeys(MasterKey,Ra,Rb)
+
 
         # return the server authentication and ecryption keys used to receive messages from the server
         return ServerEncryptKey, ServerAuthKey
